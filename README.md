@@ -1,6 +1,6 @@
-# Advent of Code 2024
+# Advent of Code 2025
 
-My solutions for https://adventofcode.com/2024/
+My solutions for https://adventofcode.com/2025/
 
 ## Setup
 
