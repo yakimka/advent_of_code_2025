@@ -1,0 +1,4 @@
+.env
+.venv
+.pypy-venv
+.pytest_cache
