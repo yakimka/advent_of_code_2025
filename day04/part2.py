@@ -13,18 +13,40 @@ INPUT_TXT = Path(__file__).parent / "input.txt"
 
 
 def compute(s: str) -> int:
-    for num in sup.iter_lines_as_numbers(s):
-        pass
-
-    for line in s.splitlines():
-        pass
-
-    return 0
+    matrix = sup.Matrix.create_from_input(s)
+    removed = 0
+    stack = [
+        (m, n)
+        for m, row in enumerate(matrix)
+        for n, cell in enumerate(row)
+        if cell == "@"
+    ]
+    while stack:
+        m, n = stack.pop()
+        if matrix[m][n] != "@":
+            continue
+        neighbors = list(matrix.neighbors_cross_diag(m, n))
+        rolls_count = sum(1 for m, n in neighbors if matrix[m][n] == "@")
+        if rolls_count < 4:
+            matrix[m][n] = "."
+            removed += 1
+            stack.extend(neighbors)
+    return removed
 
 
 INPUT_S = """\
+..@@.@@@@.
+@@@.@.@.@@
+@@@@@.@.@@
+@.@@@@..@.
+@@.@@@@.@@
+.@@@@@@@.@
+.@.@.@.@@@
+@.@@@.@@@@
+.@@@@@@@@.
+@.@.@@@.@.
 """
-EXPECTED = 21000
+EXPECTED = 43
 
 
 @pytest.mark.parametrize(
@@ -40,7 +62,7 @@ def test_debug(input_s: str, expected: int) -> None:
 def test_input() -> None:
     result = compute(read_input())
 
-    assert result == 0
+    assert result == 8354
 
 
 def read_input() -> str:

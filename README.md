@@ -10,6 +10,8 @@ My solutions for https://adventofcode.com/2025/
 make venv
 ```
 
+Note: mark directory "support" as sources root in your IDE to get code completion for helper functions.
+
 ### Create new day from template
 
 ```bash
@@ -39,6 +41,6 @@ make benchmark off-formatting=1
 # Download input for a day
 aoc-download-input
 # Submit solution
-pytest part1.py && python part1.py | aoc-submit --part=1
-pytest part2.py && python part2.py | aoc-submit --part=2
+pytest part1.py -k "not test_input" && python part1.py | aoc-submit --part=1
+pytest part2.py -k "not test_input" && python part2.py | aoc-submit --part=2
 ```

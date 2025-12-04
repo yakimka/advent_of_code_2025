@@ -13,18 +13,35 @@ INPUT_TXT = Path(__file__).parent / "input.txt"
 
 
 def compute(s: str) -> int:
-    for num in sup.iter_lines_as_numbers(s):
-        pass
+    matrix = sup.Matrix.create_from_input(s)
+    result = 0
+    for m, row in enumerate(matrix):
+        for n, cell in enumerate(row):
+            if cell == "@":
+                neighbors = [
+                    matrix[m][n]
+                    for m, n in matrix.neighbors_cross_diag(m, n)
+                    if matrix[m][n] == "@"
+                ]
+                if len(neighbors) < 4:
+                    result += 1
 
-    for line in s.splitlines():
-        pass
-
-    return 0
+    return result
 
 
 INPUT_S = """\
+..@@.@@@@.
+@@@.@.@.@@
+@@@@@.@.@@
+@.@@@@..@.
+@@.@@@@.@@
+.@@@@@@@.@
+.@.@.@.@@@
+@.@@@.@@@@
+.@@@@@@@@.
+@.@.@@@.@.
 """
-EXPECTED = 21000
+EXPECTED = 13
 
 
 @pytest.mark.parametrize(
@@ -40,7 +57,7 @@ def test_debug(input_s: str, expected: int) -> None:
 def test_input() -> None:
     result = compute(read_input())
 
-    assert result == 0
+    assert result == 1320
 
 
 def read_input() -> str:
