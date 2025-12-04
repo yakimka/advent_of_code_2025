@@ -11,15 +11,12 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections import deque
-from dataclasses import dataclass
+from collections.abc import Callable, Generator, Hashable, Iterator
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
     Any,
-    Callable,
-    Generator,
-    Hashable,
-    Iterable,
-    Iterator,
+    Generic,
     NamedTuple,
     TextIO,
     TypeVar,
@@ -273,30 +270,40 @@ class Direction(Vector2D, Enum):
 
 
 Coords = tuple[int, int]
-inf_coords = (float("inf"), float("inf"))
 T = TypeVar("T")
 
 
-@dataclass
-class Matrix:
+@dataclass(slots=True)
+class Matrix(Generic[T]):
     data: list[list[T]]
+    _rows: int = field(init=False, repr=False)
+    _cols: int = field(init=False, repr=False)
+    _max_row: int = field(init=False, repr=False)
+    _max_col: int = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self._rows = len(self.data)
+        cols = len(self.data[0]) if self._rows else 0
+        self._cols = cols
+        self._max_row = self._rows - 1
+        self._max_col = cols - 1
 
     @property
-    def m_len(self) -> int:
-        return len(self.data)
+    def rows(self) -> int:
+        return self._rows
 
     @property
-    def n_len(self) -> int:
-        return len(self.data[0])
+    def cols(self) -> int:
+        return self._cols
 
     @property
-    def bounds(self) -> tuple[int, int]:
-        return self.m_len - 1, self.n_len - 1
+    def shape(self) -> tuple[int, int]:
+        return self._rows, self._cols
 
     @classmethod
     def create_from_input(
         cls, s: str, *, split_by: str = "", cast_func: Callable[[str], T] = str
-    ) -> Matrix:
+    ) -> Matrix[T]:
         matrix = []
         for line in s.strip().splitlines():
             if split_by:
@@ -314,26 +321,38 @@ class Matrix:
     def __getitem__(self, m: int) -> list[T]:
         return self.data[m]
 
-    def copy(self) -> Matrix:
+    def in_bounds(self, m: int, n: int) -> bool:
+        return 0 <= m <= self._max_row and 0 <= n <= self._max_col
+
+    def iter_coords(self) -> Iterator[Coords]:
+        for m in range(self._rows):
+            for n in range(self._cols):
+                yield m, n
+
+    def copy(self) -> Matrix[T]:
         return Matrix([row.copy() for row in self.data])
 
     def neighbors_cross(self, m: int, n: int) -> Generator[Coords, None, None]:
-        neighbors = (
-            (m, n - 1),
-            (m - 1, n),
-            (m + 1, n),
-            (m, n + 1),
-        )
-        yield from filter_neighbors(neighbors, max_bounds=self.bounds)
+        max_row, max_col = self._max_row, self._max_col
+        if n - 1 >= 0:
+            yield m, n - 1
+        if m - 1 >= 0:
+            yield m - 1, n
+        if m + 1 <= max_row:
+            yield m + 1, n
+        if n + 1 <= max_col:
+            yield m, n + 1
 
     def neighbors_diag(self, m: int, n: int) -> Generator[Coords, None, None]:
-        neighbors = (
-            (m - 1, n - 1),
-            (m + 1, n - 1),
-            (m - 1, n + 1),
-            (m + 1, n + 1),
-        )
-        yield from filter_neighbors(neighbors, max_bounds=self.bounds)
+        max_row, max_col = self._max_row, self._max_col
+        if m - 1 >= 0 and n - 1 >= 0:
+            yield m - 1, n - 1
+        if m + 1 <= max_row and n - 1 >= 0:
+            yield m + 1, n - 1
+        if m - 1 >= 0 and n + 1 <= max_col:
+            yield m - 1, n + 1
+        if m + 1 <= max_row and n + 1 <= max_col:
+            yield m + 1, n + 1
 
     def neighbors_cross_diag(self, m: int, n: int) -> Generator[Coords, None, None]:
         yield from self.neighbors_cross(m, n)
@@ -346,6 +365,7 @@ class Matrix:
         Return all neighbors, including out of bounds.
         Clockwise order (from up-left corner).
         """
+        max_row, max_col = self._max_row, self._max_col
         neighbors = (
             (m - 1, n - 1),
             (m - 1, n),
@@ -356,48 +376,31 @@ class Matrix:
             (m + 1, n - 1),
             (m, n - 1),
         )
-        max_bounds = self.bounds
-        yield from (
-            (m, n) if 0 <= m <= max_bounds[0] and 0 <= n <= max_bounds[1] else default
-            for m, n in neighbors
-        )
+        for n_m, n_n in neighbors:
+            if 0 <= n_m <= max_row and 0 <= n_n <= max_col:
+                yield (n_m, n_n)
+            else:
+                yield default
 
     def next_coords(
         self, m: int, n: int, direction: Vector2D, size: int = 1
     ) -> Coords | None:
-        next_m, next_n = m + direction.x * size, n + direction.y * size
-        if (
-            0 > next_m
-            or 0 > next_n
-            or next_m > self.bounds[0]
-            or next_n > self.bounds[1]
-        ):
-            return None
-
-        return next_m, next_n
+        next_m = m + direction.x * size
+        next_n = n + direction.y * size
+        if 0 <= next_m <= self._max_row and 0 <= next_n <= self._max_col:
+            return next_m, next_n
+        return None
 
     def get_values(self, m: int, n: int, direction: Vector2D, size: int = 2) -> list[T]:
         results = []
+        max_row, max_col = self._max_row, self._max_col
         for i in range(size):
-            next_m, next_n = m + direction.x * i, n + direction.y * i
-            if next_m < 0 or next_n < 0:
-                return results
-
-            try:
-                results.append(self.data[next_m][next_n])
-            except IndexError:
-                return results
+            next_m = m + direction.x * i
+            next_n = n + direction.y * i
+            if next_m < 0 or next_n < 0 or next_m > max_row or next_n > max_col:
+                break
+            results.append(self.data[next_m][next_n])
         return results
-
-
-def filter_neighbors(
-    neighbors: Iterable[Coords], *, max_bounds: Coords = inf_coords
-) -> Generator[Coords, None, None]:
-    yield from (
-        (m, n)
-        for m, n in neighbors
-        if 0 <= m <= max_bounds[0] and 0 <= n <= max_bounds[1]
-    )
 
 
 def cartesian_shortest_path(coords1: Coords, coords2: Coords) -> int:

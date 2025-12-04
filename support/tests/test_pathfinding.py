@@ -22,8 +22,8 @@ def graph(matrix):
         (m, n): {
             (n_m, n_n): matrix[n_m][n_n] for n_m, n_n in matrix.neighbors_cross(m, n)
         }
-        for m in range(matrix.m_len)
-        for n in range(matrix.n_len)
+        for m in range(matrix.rows)
+        for n in range(matrix.cols)
     }
 
 

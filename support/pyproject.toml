@@ -1,0 +1,21 @@
+[tool.pytest.ini_options]
+# Directories that are not visited by pytest collector:
+norecursedirs = [
+  "*.egg",
+  ".eggs",
+  "dist",
+  "build",
+  "docs",
+  ".tox",
+  ".git",
+  "__pycache__",
+  ".cache",
+  ".venv",
+  "venv",
+]
+
+# Extra options:
+addopts = [
+  "--import-mode=importlib",
+]
+pythonpath = "."
