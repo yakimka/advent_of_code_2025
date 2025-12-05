@@ -246,6 +246,23 @@ class Range:
         return result
 
 
+def merge_ranges(ranges: list[Range]) -> list[Range]:
+    if not ranges:
+        return []
+
+    sorted_ranges = sorted(ranges, key=lambda r: r.start)
+    merged = [sorted_ranges[0]]
+
+    for current in sorted_ranges[1:]:
+        last = merged[-1]
+        if current.start <= last.end:
+            merged[-1] = Range(last.start, max(last.end, current.end))
+        else:
+            merged.append(current)
+
+    return merged
+
+
 class Vector2D(NamedTuple):
     x: int
     y: int
