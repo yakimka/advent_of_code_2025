@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import math
 import sys
 import timeit
 from pathlib import Path
@@ -12,19 +13,53 @@ import support as sup
 INPUT_TXT = Path(__file__).parent / "input.txt"
 
 
+op_map = {
+    "+": sum,
+    "*": math.prod,
+}
+
+
 def compute(s: str) -> int:
-    for num in sup.iter_lines_as_numbers(s):
-        pass
+    lines = s.splitlines()
+    i = len(lines[0]) - 1
+    last_line = len(lines) - 1
+    rotated = [[]]
+    delimeter = " "
+    while i >= 0:
+        for li, line in enumerate(lines):
+            try:
+                num = line[i]
+            except IndexError:
+                num = " "
 
-    for line in s.splitlines():
-        pass
+            if li == last_line:
+                if num in "+*":
+                    rotated[-1].append(num)
+                    rotated.append([])
+                else:
+                    if rotated[-1]:
+                        rotated[-1].append(delimeter)
+            elif num != " ":
+                rotated[-1].append(num)
+        i -= 1
 
-    return 0
+    answer = 0
+    for row in rotated:
+        if not row:
+            continue
+        op = op_map[row[-1]]
+        nums = [int(n) for n in "".join(row[:-1]).split(delimeter)]
+        answer += op(nums)
+    return answer
 
 
 INPUT_S = """\
+123 328  51 64
+ 45 64  387 23
+  6 98  215 314
+*   +   *   +
 """
-EXPECTED = 21000
+EXPECTED = 3263827
 
 
 @pytest.mark.parametrize(
@@ -40,7 +75,7 @@ def test_debug(input_s: str, expected: int) -> None:
 def test_input() -> None:
     result = compute(read_input())
 
-    assert result == 0
+    assert result == 11494432585168
 
 
 def read_input() -> str:
