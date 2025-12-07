@@ -167,10 +167,12 @@ def timed(label: str) -> Generator[None, None, None]:
         print(f"{label}: {humanized_seconds(end - start)}")
 
 
-def print_matrix(matrix: list[list[Any]], file: TextIO | None = None) -> None:
+def print_matrix(matrix: list[list[Any]] | Matrix, file: TextIO | None = None) -> None:
     if not matrix or not matrix[0]:
         print("Empty matrix")
         return
+    if isinstance(matrix, Matrix):
+        matrix = matrix.data
 
     # Find the maximum length of any item in the matrix for formatting.
     max_item_len = max(len(str(item)) for row in matrix for item in row)
@@ -409,6 +411,10 @@ class Matrix(Generic[T]):
         return None
 
     def get_values(self, m: int, n: int, direction: Vector2D, size: int = 2) -> list[T]:
+        """
+        Get values in the given direction for the given size.
+        Start coords included.
+        """
         results = []
         max_row, max_col = self._max_row, self._max_col
         for i in range(size):
@@ -418,6 +424,28 @@ class Matrix(Generic[T]):
                 break
             results.append(self.data[next_m][next_n])
         return results
+
+    def get_until(self, m: int, n: int, direction: Vector2D, stop_at: Any) -> list[T]:
+        """
+        Get values in the given direction until stop_at value is found.
+        Start coords excluded.
+        If stop_at is not found, return empty list.
+        """
+        results = []
+        max_row, max_col = self._max_row, self._max_col
+        size = max(max_row, max_col)
+        found = False
+        for i in range(1, size):
+            next_m = m + direction.x * i
+            next_n = n + direction.y * i
+            if next_m < 0 or next_n < 0 or next_m > max_row or next_n > max_col:
+                break
+            value = self.data[next_m][next_n]
+            results.append(value)
+            if value == stop_at:
+                found = True
+                break
+        return results if found else []
 
 
 def cartesian_shortest_path(coords1: Coords, coords2: Coords) -> int:
