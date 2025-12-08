@@ -11,7 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from collections import deque
-from collections.abc import Callable, Generator, Hashable, Iterator
+from collections.abc import Callable, Generator, Hashable, Iterator, Sequence
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import (
@@ -602,3 +602,45 @@ class GraphCycleFinder:
                     cycles.append(clique)
 
         return cycles
+
+
+class DisjointSet[T]:
+    def __init__(self, items: Sequence[T]) -> None:
+        self._items = list(items)
+        self._index = {item: i for i, item in enumerate(self._items)}
+        n = len(self._items)
+        self.parent = list(range(n))
+        self.size = [1] * n
+        self._n_subsets = n
+
+    def find(self, item: T) -> int:
+        i = self._index[item]
+        # path compression
+        while self.parent[i] != i:
+            self.parent[i] = self.parent[self.parent[i]]
+            i = self.parent[i]
+        return i
+
+    def merge(self, a: T, b: T) -> bool:
+        ia = self.find(a)
+        ib = self.find(b)
+        if ia == ib:
+            return False
+        # union by size: attach smaller root to larger root
+        if self.size[ia] < self.size[ib]:
+            ia, ib = ib, ia
+        self.parent[ib] = ia
+        self.size[ia] += self.size[ib]
+        self._n_subsets -= 1
+        return True
+
+    def subsets(self) -> list[set[T]]:
+        groups = {}
+        for item in self._items:
+            root = self.find(item)
+            groups.setdefault(root, []).append(item)
+        return [set(vals) for vals in groups.values()]
+
+    @property
+    def n_subsets(self) -> int:
+        return self._n_subsets
