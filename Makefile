@@ -1,5 +1,5 @@
 SHELL:=/usr/bin/env bash
-DEPENDENCIES:=-e support pre-commit==4.5.0 ipython pytest Cython
+DEPENDENCIES:=-e support pre-commit==4.5.0 ipython pytest Cython z3-solver
 
 venv:
 	@echo "Setting up virtual environment..."
