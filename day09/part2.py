@@ -71,6 +71,7 @@ def compute(s: str) -> int:
         area = rect.area()
         if area > max_area:
             max_area = area
+            last_change = 0
         else:
             last_change += 1
 
@@ -117,7 +118,7 @@ if __name__ == "__main__":
         print("Answer is:     ", compute(input_data))
 
     if "-b" in sys.argv or "-bh" in sys.argv:
-        number_of_runs = 2
+        number_of_runs = 100
         bench_time = timeit.timeit(
             "compute(data)",
             setup="from __main__ import compute",
