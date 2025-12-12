@@ -127,13 +127,13 @@ def submit_solution() -> int:
         return 1
 
 
-def submit_25_pt2() -> int:
+def submit_12_pt2() -> int:
     parser = argparse.ArgumentParser()
     parser.parse_args()
 
     year, day = get_year_day()
 
-    assert day == 25, day
+    assert day == 12, day
     contents = _post_answer(year, day, part=2, answer=0)
 
     if "Congratulations!" in contents:
